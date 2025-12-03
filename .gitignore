@@ -1,0 +1,20 @@
+# Executables
+*.exe
+*.out
+*.app
+
+# Build
+/build
+/out
+.DS_Store
+
+# IDE
+.vscode
+.vs
+CMakeSettings.json
+.cache
+
+# Submodules
+/external
+
+imgui.ini
