@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
-# 
+#
 # NVIDIA CORPORATION and its licensors retain all intellectual property
 # and proprietary rights in and to this software, related documentation
 # and any modifications thereto. Any use, reproduction, disclosure or
@@ -16,12 +16,12 @@ set(shader_includes
 
 set(SHADER_COMPILE_OPTIONS "--matrixRowMajor --hlsl2021" )
 
-set(SHADER_COMPILE_OPTIONS_SPIRV " -X \"-Wno-41017 -capability spvCooperativeVectorNV -capability spvCooperativeVectorTrainingNV\" " )
+set(SHADER_COMPILE_OPTIONS_SPIRV " -X  \"-Wno-41017 -capability spvCooperativeVectorNV -capability spvCooperativeVectorTrainingNV\" " )
 
 set(SHADER_COMPILE_OPTIONS_DXIL " --shaderModel 6_9 --hlsl2021 -X \"-Wno-41012 -Wno-41016 -Wno-41017 -Xdxc -Vd\" " )
 
-set(project SimpleTraining)
-set(folder "samples/SimpleTraining")
+set(project HelloCoopVec)
+set(folder "samples/HelloCoopVec")
 
 file(GLOB_RECURSE ${project}_shaders "*.hlsl" "*.hlsli" "*.slang")
 file(GLOB_RECURSE ${project}_sources "*.cpp" "*.h" "*.md")

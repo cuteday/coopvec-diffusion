@@ -9,3 +9,8 @@ This is just a pet project of mine and I'm not familiar with the mathematical fo
 ### Dependencies
 
 This project should start with RTXNS which offers basic construction blocks, like linear layer wrappers and optimizers. It will also heavily rely on the autodiff features of Slang.
+
+- [RTXNS](https://github.com/NVIDIA-RTX/RTXNS)
+- [Donut](https://github.com/NVIDIA-RTX/Donut)
+- [Slang](https://github.com/shader-slang/slang)
+- [TensorRT-RTX](https://developer.nvidia.com/tensorrt-rtx) (Optional)

@@ -1,3 +1,6 @@
 add_subdirectory(HelloWorld)
-add_subdirectory(SimpleInferencing)
-add_subdirectory(SimpleTraining)
+add_subdirectory(HelloDonut)
+add_subdirectory(HelloCoopVec)
+if (FLUXEL_WITH_CUDA)
+    add_subdirectory(HelloTRT)
+endif()

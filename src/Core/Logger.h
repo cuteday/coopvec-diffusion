@@ -65,7 +65,7 @@ private:
 	friend void logFatal(const std::string& msg, bool terminate);
 	template <typename... Args> 
 	friend void logMessage(Log::Level level, const std::string &msg, Args &&...payload);
-
+public:
 	static void log(Level level, const std::string& msg, bool terminate = false);
 };
 #ifndef KRR_DEBUG_BUILD

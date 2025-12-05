@@ -6,6 +6,10 @@ project(
 	LANGUAGES CXX
 )
 
+option(FLUXEL_WITH_CUDA "Enable CUDA support" ON)
+
+set(FLUXEL_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "The root directory of the Fluxel project.")
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
@@ -59,6 +63,13 @@ if (DONUT_WITH_DX12)
 	set(DONUT_D3D_AGILITY_SDK_FETCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/dx12-agility-sdk" CACHE STRING "" FORCE)
 	include("${CMAKE_CURRENT_SOURCE_DIR}/external/donut/cmake/FetchAgilitySDK.cmake")
 	include("${CMAKE_CURRENT_SOURCE_DIR}/common/cmake/ConfigureAgilitySDK.cmake")
+endif()
+
+if (FLUXEL_WITH_CUDA)
+	find_package(CUDAToolkit REQUIRED)
+	include("${CMAKE_CURRENT_SOURCE_DIR}/common/cmake/FetchTensorRTRTX.cmake")
+	include_directories(${TRT_RTX_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS})
+	link_directories(${TRT_RTX_LIBRARY_DIR} ${CUDA_LIBRARY_DIRS})
 endif()
 
 add_subdirectory(external/donut)
