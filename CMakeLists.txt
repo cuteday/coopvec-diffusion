@@ -8,6 +8,8 @@ project(
 
 option(FLUXEL_WITH_CUDA "Enable CUDA support" ON)
 
+option(FLUXEL_BUILD_SAMPLES "Build samples" ON)
+
 set(FLUXEL_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "The root directory of the Fluxel project.")
 
 set(CMAKE_CXX_STANDARD 20)
@@ -74,7 +76,9 @@ endif()
 
 add_subdirectory(external/donut)
 add_subdirectory(src)
-add_subdirectory(samples)
+if (FLUXEL_BUILD_SAMPLES)
+    add_subdirectory(samples)
+endif()
 
 if (NOT EXISTS "${SHADERMAKE_SLANG_PATH}")
 	message(FATAL_ERROR "SHADERMAKE_SLANG_PATH not set!")

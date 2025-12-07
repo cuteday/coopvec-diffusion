@@ -17,4 +17,8 @@ CMakeSettings.json
 # Submodules
 /external
 
+# Local files
+/assets/local
+
+# Runtime temporary files
 imgui.ini

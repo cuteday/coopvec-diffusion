@@ -26,21 +26,17 @@
 #include <donut/core/json.h>
 #include <nvrhi/utils.h>
 #include <random>
-#include <fstream>
-#include <sstream>
 
 #include "Utils/DeviceUtils.h"
 #include "Neural/CooperativeVectors.h"
-#include "Utils/GeometryUtils.h"
 #include "Neural/Network.h"
-#include "Utils/DirectoryHelper.h"
+#include "Utils/FileSystem.h"
 #include "Utils/LearningRateScheduler.h"
 
 using namespace donut;
 using namespace donut::math;
 using namespace fluxel;
 
-#include "Logger.h"
 #include "NetworkConfig.h"
 #include <donut/shaders/view_cb.h>
 
@@ -85,7 +81,7 @@ public:
         auto nativeFS = std::make_shared<vfs::NativeFileSystem>();
         m_TextureCache = std::make_shared<engine::TextureCache>(GetDevice(), nativeFS, m_DescriptorTableManager);
 
-        const std::filesystem::path dataPath = GetLocalPath("assets/data");
+        const std::filesystem::path dataPath = file::projectDir() / "assets/data";
         std::filesystem::path textureFileName = dataPath / "checker.png";
         std::shared_ptr<engine::LoadedTexture> texture = m_TextureCache->LoadTextureFromFile(textureFileName, true, nullptr, m_commandList);
         if (texture->texture == nullptr)
@@ -186,7 +182,6 @@ public:
         m_commandList->beginTrackingBufferState(m_mlpMoments2Buffer, nvrhi::ResourceStates::UnorderedAccess);
         m_commandList->clearBufferUInt(m_mlpMoments2Buffer, 0);
 
-        uint32_t imageSize = m_InputTexture->getDesc().width * m_InputTexture->getDesc().height;
         paramsBufferDesc.debugName = "RandStateBuffer";
         paramsBufferDesc.initialState = nvrhi::ResourceStates::UnorderedAccess;
         paramsBufferDesc.byteSize = BATCH_SIZE_X * BATCH_SIZE_Y * 4;

@@ -14,7 +14,7 @@ list(APPEND SRC_FILES ${UTILS_SRC})
 
 # TensorRT sources are only used when CUDA is enabled
 if (FLUXEL_WITH_CUDA)
-    file(GLOB_RECURSE TENSORRT_SRC "TensorRT/*.cpp" "TensorRT/*.h")
+    file(GLOB_RECURSE TENSORRT_SRC "Inference/*.cpp" "Inference/*.h")
     list(APPEND SRC_FILES ${TENSORRT_SRC})
 endif()
 
@@ -24,9 +24,15 @@ set(folder "${LIBRARY_FILTER}")
 add_subdirectory(Core/Math)
 add_subdirectory(Shaders)
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Core/Config.h.in ${CMAKE_CURRENT_BINARY_DIR}/Include/Config.h)
+
 add_library(${project} STATIC EXCLUDE_FROM_ALL ${SRC_FILES})
-target_include_directories(${project} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(${project} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Core)
+target_include_directories(${project} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core
+    ${CMAKE_CURRENT_BINARY_DIR}/Include
+)
+
 target_link_libraries(${project} PUBLIC donut_app donut_engine krr_math)
 
 if (DONUT_WITH_DX12)

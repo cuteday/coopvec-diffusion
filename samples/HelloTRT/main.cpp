@@ -1,14 +1,12 @@
-
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <vector>
 
-#include "TensorRT/Inference.h"
-
 #include "NvOnnxParser.h"
 
+#include "Inference/TensorRT.h"
 #include "Logger.h"
 
 using namespace fluxel;
@@ -17,8 +15,7 @@ using namespace fluxel;
 constexpr int32_t kInputSize = 3;
 constexpr int32_t kHiddenSize = 10;
 constexpr int32_t kOutputSize = 2;
-// Set --onnx=/path/to/helloWorld.onnx to parse the provided ONNX model.
-std::string kOnnxModelPath = "";
+    std::string kOnnxModelPath = "";
 
 struct WeightsData
 {

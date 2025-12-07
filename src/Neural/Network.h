@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <filesystem>
 #include <nvrhi/utils.h>
 
 #include "Fluxel.h"
