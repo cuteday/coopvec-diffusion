@@ -1,3 +1,4 @@
+#include <driver_types.h>
 #include <string>
 #include <cassert>
 #include "NvInferRuntime.h"
@@ -62,24 +63,50 @@ std::shared_ptr<SharedTensor> TensorRTExecutionProvider::createSharedTensor(
 
   	auto sharedTensor = std::make_shared<SharedTensor>();
 	sharedTensor->descriptor = descriptor;
-	sharedTensor->cudaPtr = nullptr;
-	sharedTensor->cudaExternalMemory = nullptr;
-    sharedTensor->buffer = nullptr;
 
-    nvrhi::BufferDesc bufferDesc;
-	bufferDesc.byteSize = descriptor.shape.size() * descriptor.elementSize();
+    nvrhi::BufferDesc bufferDesc = {};
+	size_t elementCount = 1;
+	for (size_t dim : descriptor.shape) {
+		elementCount *= dim;
+	}
+	bufferDesc.byteSize = static_cast<size_t>(elementCount * descriptor.elementSize());
 	bufferDesc.debugName = descriptor.name;
 	bufferDesc.canHaveUAVs = true;
+	bufferDesc.canHaveRawViews = true;
 	bufferDesc.initialState = nvrhi::ResourceStates::UnorderedAccess;
 	bufferDesc.keepInitialState = false;
 	// Setup shared resource flags for CUDA external memory export.
     bufferDesc.sharedResourceFlags = nvrhi::SharedResourceFlags::Shared;
 
     // Create a buffer for the shared tensor.
-    sharedTensor->buffer = GetDevice()->createBuffer(bufferDesc);
+    sharedTensor->buffer = getDevice()->createBuffer(bufferDesc);
 
     // Export the buffer to CUDA external memory.
-    auto sharedHandle = sharedTensor->buffer->getNativeObject(nvrhi::ObjectTypes::SharedHandle);
+    HANDLE sharedHandle =
+        sharedTensor->buffer->getNativeObject(nvrhi::ObjectTypes::SharedHandle);
+
+    if (getDevice()->getGraphicsAPI() == nvrhi::GraphicsAPI::VULKAN) {
+    	// Import the handle for a Vulkan buffer to CUDA as an external memory.
+		cudaExternalMemoryHandleDesc handleDesc = {};
+        handleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
+        handleDesc.handle.win32.name = nullptr;
+        handleDesc.handle.win32.handle = sharedHandle;
+        handleDesc.size = bufferDesc.byteSize;
+
+        CUDA_ASSERT(cudaImportExternalMemory(&sharedTensor->cudaExternalMemory,
+                                             &handleDesc));
+
+        // Map the CUDA external memory to device pointer.
+        cudaExternalMemoryBufferDesc cudaBufferDesc = {};
+        cudaBufferDesc.flags = 0;
+        cudaBufferDesc.offset = 0;
+        cudaBufferDesc.size = bufferDesc.byteSize;
+
+        CUDA_ASSERT(cudaExternalMemoryGetMappedBuffer(&sharedTensor->cudaPtr, sharedTensor->cudaExternalMemory, &cudaBufferDesc));
+
+    } else {
+		Log(Fatal, "[TensorRT Runner] Inference is not implemented for this graphics API: %d", getDevice()->getGraphicsAPI());
+	}
 
 	return sharedTensor;
 }
@@ -185,10 +212,38 @@ bool TensorRTExecutionProvider::load(std::filesystem::path onnxPath) {
 
     // Create buffers for IO tensors and setup their addresses in the execution context.
     for (auto &[name, descriptor] : m_inputDescriptors) {
-		m_tensors[name] = createSharedTensor(descriptor);
+		auto tensor = createSharedTensor(descriptor);
+
+        m_tensors[name] = tensor;
+        m_executionContext->setTensorAddress(name.c_str(), tensor->cudaPtr);
+
+        // Set the shape for current input in case it is built with dynamic shapes.
+        nvinfer1::Dims dims;
+        dims.nbDims = descriptor.shape.size();
+        for (size_t i = 0; i < descriptor.shape.size(); i++) {
+            dims.d[i] = descriptor.shape[i];
+        }
+        m_executionContext->setInputShape(name.c_str(), dims);
     }
 
+    for (auto &[name, descriptor] : m_outputDescriptors) {
+      auto tensor = createSharedTensor(descriptor);
+
+      m_tensors[name] = tensor;
+      m_executionContext->setTensorAddress(name.c_str(), tensor->cudaPtr);
+    }
+
+    // Create a CUDA context for the execution provider.
+    m_cudaContext = std::make_unique<CUDAContext>();
+
 	return true;
+}
+
+void TensorRTExecutionProvider::inference() {
+	// TODO: Implement asynchronous inference with multiple on-flight inference requests.
+	// TODO: Check whether we can set the dimension at the dynamic axis as 1.
+
+    m_executionContext->enqueueV3(m_cudaContext->getStream());
 }
 
 NAMESPACE_END(fluxel)

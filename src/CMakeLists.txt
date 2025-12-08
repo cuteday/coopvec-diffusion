@@ -45,7 +45,7 @@ endif()
 
 if (FLUXEL_WITH_CUDA)
     target_include_directories(${project} PUBLIC ${TRT_RTX_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS})
-    target_link_libraries(${project} PUBLIC ${TRT_RTX_LIB_NAME} ${TRT_RTX_ONNXPARSER_LIB_NAME} ${CUDA_LIBRARIES} CUDA::cudart)
+    target_link_libraries(${project} PUBLIC ${TRT_RTX_LIB_NAME} ${TRT_RTX_ONNXPARSER_LIB_NAME} ${CUDA_LIBRARIES} CUDA::cudart CUDA::cuda_driver)
 endif()
 
 set_target_properties(${project} PROPERTIES FOLDER ${folder})

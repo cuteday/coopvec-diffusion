@@ -19,18 +19,6 @@
 #include "Object.h"
 #include "Inference/Common.h"
 
-#define CUDA_ASSERT(cudaCall)                                                                                          \
-	do                                                                                                                 \
-	{                                                                                                                  \
-		cudaError_t __cudaError = (cudaCall);                                                                          \
-		if (__cudaError != cudaSuccess)                                                                                \
-		{                                                                                                              \
-			std::cerr << "CUDA error: " << cudaGetErrorString(__cudaError) << " at " << __FILE__ << ":" << __LINE__    \
-					<< std::endl;                                                                                    \
-			assert(false);                                                                                             \
-		}                                                                                                              \
-	} while (0)
-
 NAMESPACE_BEGIN(fluxel)
 
 class TRTLogger : public nvinfer1::ILogger {
@@ -64,6 +52,10 @@ public:
   	~TensorRTExecutionProvider() override = default;
 
     bool load(std::filesystem::path onnxPath);
+	void inference();
+
+	[[nodiscard]] const std::unordered_map<std::string, TensorDescriptor> &getInputDescriptors() const { return m_inputDescriptors; }
+	[[nodiscard]] const std::unordered_map<std::string, TensorDescriptor> &getOutputDescriptors() const { return m_outputDescriptors; }
 
     [[nodiscard]] std::shared_ptr<SharedTensor> getTensor(const std::string &name);
     [[nodiscard]] nvrhi::BufferHandle getTensorBuffer(const std::string &name);
@@ -78,6 +70,7 @@ private:
 
 	// CUDA and synchronization
 	cudaExternalSemaphore_t m_cudaSemaphore = nullptr;
+	std::unique_ptr<CUDAContext> m_cudaContext;
 
     // IO tensors and descriptors
 	std::unordered_map<std::string, TensorDescriptor> m_inputDescriptors;

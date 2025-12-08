@@ -14,8 +14,8 @@ public:
 
 	virtual ~CommonDeviceObject() = default;
 
-	[[nodiscard]] donut::app::DeviceManager *GetDeviceManager() const { return m_deviceManager; }
-	[[nodiscard]] nvrhi::IDevice *GetDevice() const { return m_deviceManager->GetDevice(); }
+	[[nodiscard]] donut::app::DeviceManager *getDeviceManager() const { return m_deviceManager; }
+	[[nodiscard]] nvrhi::IDevice *getDevice() const { return m_deviceManager->GetDevice(); }
 
 private:
 	donut::app::DeviceManager* m_deviceManager;
