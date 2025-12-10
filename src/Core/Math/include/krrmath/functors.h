@@ -138,6 +138,10 @@ template <typename T> KRR_CALLABLE T smooth_step(T x, T a, T b) {
 	return t * t * (3 - 2 * t);
 }
 
+template <typename T> KRR_CALLABLE T div_ceil(T a, T b) {
+	return (a + b - static_cast<T>(1)) / b;
+}
+
 KRR_CALLABLE float saturate(const float &f) { return min(1.f, max(0.f, f)); }
 
 KRR_CALLABLE float rcp(float f) { return 1.f / f; }
@@ -152,7 +156,7 @@ KRR_CALLABLE float sech(const float x) { return 1 / cosh(x); }
 
 KRR_CALLABLE float radians(const float degree) { return degree * M_PI / 180.f; }
 
-template <typename T> KRR_CALLABLE 
+template <typename T> KRR_CALLABLE
 T lerp(T x, T y, T weight) { return (1.f - weight) * x + weight * y; }
 
 NAMESPACE_END(krr)

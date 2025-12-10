@@ -68,11 +68,15 @@ if (DONUT_WITH_DX12)
 endif()
 
 if (FLUXEL_WITH_CUDA)
+	enable_language(CUDA)
 	find_package(CUDAToolkit REQUIRED)
 	include("${CMAKE_CURRENT_SOURCE_DIR}/common/cmake/FetchTensorRTRTX.cmake")
 	include_directories(${TRT_RTX_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS})
 	link_directories(${TRT_RTX_LIBRARY_DIR} ${CUDA_LIBRARY_DIRS})
 endif()
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(FLUXEL_MAIN_SHADER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Include/Shaders CACHE PATH "" FORCE)
 
 add_subdirectory(external/donut)
 add_subdirectory(src)

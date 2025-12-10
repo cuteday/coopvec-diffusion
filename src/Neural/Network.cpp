@@ -269,11 +269,11 @@ bool HostNetwork::Initialise(const NetworkArchitecture& netArch)
         const auto& layer = m_networkLayout.networkLayers[i];
         std::vector<Eigen::half> weights;
         weights.resize(size_t(layer.inputs * layer.outputs), Eigen::half(0));
-        std::generate(weights.begin(), weights.end(), [&, k = sqrt(6.f / (layer.inputs + layer.outputs))]() { return Eigen::half(dist(gen) * k); });
+        std::generate(weights.begin(), weights.end(), [&, k = std::sqrt(6.f / (layer.inputs + layer.outputs))]() { return Eigen::half(dist(gen) * k); });
         std::memcpy(m_networkParams.data() + layer.weightOffset, weights.data(), layer.weightSize);
 
         std::vector<Eigen::half> bias(layer.outputs);
-        std::generate(bias.begin(), bias.end(), [&, k = sqrt(6.f / bias.size())]() { return Eigen::half(dist(gen) * k); });
+        std::generate(bias.begin(), bias.end(), [&, k = std::sqrt(6.f / bias.size())]() { return Eigen::half(dist(gen) * k); });
         std::memcpy(m_networkParams.data() + layer.biasOffset, bias.data(), layer.biasSize);
     }
     return true;

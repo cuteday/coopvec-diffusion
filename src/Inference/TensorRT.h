@@ -36,7 +36,9 @@ struct TensorDescriptor {
 	std::vector<size_t> shape;
     nvinfer1::DataType type;
 
-    float elementSize() const;
+	float elementSize() const;
+	size_t elementCount() const;
+	size_t byteSize() const;
 };
 
 struct SharedTensor {
@@ -48,7 +50,7 @@ struct SharedTensor {
 
 class TensorRTExecutionProvider : public IExecutionProvider, public CommonDeviceObject {
 public:
-  	explicit TensorRTExecutionProvider(donut::app::DeviceManager *deviceManager);
+  	explicit TensorRTExecutionProvider(nvrhi::IDevice *device);
   	~TensorRTExecutionProvider() override = default;
 
     bool load(std::filesystem::path onnxPath);
@@ -58,7 +60,7 @@ public:
 	[[nodiscard]] const std::unordered_map<std::string, TensorDescriptor> &getOutputDescriptors() const { return m_outputDescriptors; }
 
     [[nodiscard]] std::shared_ptr<SharedTensor> getTensor(const std::string &name);
-    [[nodiscard]] nvrhi::BufferHandle getTensorBuffer(const std::string &name);
+    [[nodiscard]] nvrhi::IBuffer* getTensorBuffer(const std::string &name);
 
 private:
 	std::shared_ptr<SharedTensor> createSharedTensor(const TensorDescriptor &descriptor);

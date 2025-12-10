@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 
     // Create a TensorRT runner.
 	{
-		auto runner = std::make_unique<TensorRTExecutionProvider>(deviceManager.get());
+		auto runner = std::make_unique<TensorRTExecutionProvider>(deviceManager->GetDevice());
 
 		std::filesystem::path onnxModelPath = file::projectDir() / "assets/data/HelloTRT.onnx";
 		if (!runner->load(onnxModelPath)) {
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 			return EXIT_FAILURE;
 		}
 
-		auto input	= runner->getTensor("input");
+		auto input = runner->getTensor("input");
 		auto output = runner->getTensor("output");
 
 		std::vector<float> inputData(3);

@@ -1,16 +1,7 @@
-#
-# Copyright (c) 2025, NVIDIA CORPORATION. All rights reserved.
-#
-# NVIDIA CORPORATION and its licensors retain all intellectual property
-# and proprietary rights in and to this software, related documentation
-# and any modifications thereto. Any use, reproduction, disclosure or
-# distribution of this software and related documentation without an express
-# license agreement from NVIDIA CORPORATION is strictly prohibited.
-
 include(../../external/donut/compileshaders.cmake)
 
 set(shader_includes
-	${FLUXEL_SHADER_INCLUDE_DIR}
+	${FLUXEL_COOPVEC_SHADER_INCLUDE_DIR}
 	${CMAKE_CURRENT_LIST_DIR}
 )
 

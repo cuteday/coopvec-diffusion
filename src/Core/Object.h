@@ -9,16 +9,15 @@ NAMESPACE_BEGIN(fluxel)
 
 class CommonDeviceObject {
 public:
-	explicit CommonDeviceObject(donut::app::DeviceManager *deviceManager)
-		: m_deviceManager(deviceManager) {}
+	explicit CommonDeviceObject(nvrhi::IDevice *device)
+		: m_device(device) {}
 
 	virtual ~CommonDeviceObject() = default;
 
-	[[nodiscard]] donut::app::DeviceManager *getDeviceManager() const { return m_deviceManager; }
-	[[nodiscard]] nvrhi::IDevice *getDevice() const { return m_deviceManager->GetDevice(); }
+	[[nodiscard]] nvrhi::IDevice *getDevice() const { return m_device; }
 
 private:
-	donut::app::DeviceManager* m_deviceManager;
+	nvrhi::IDevice* m_device;
 };
 
 NAMESPACE_END(fluxel)

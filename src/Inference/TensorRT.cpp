@@ -1,6 +1,9 @@
 #include <driver_types.h>
 #include <string>
 #include <cassert>
+#include <filesystem>
+#include <system_error>
+#include <numeric>
 #include "NvInferRuntime.h"
 #include "NvOnnxParser.h"
 
@@ -43,19 +46,25 @@ float getTensorElementSize(nvinfer1::DataType dataType) {
 	}
 }
 
-float TensorDescriptor::elementSize() const {
-	return getTensorElementSize(this->type);
-}
+float TensorDescriptor::elementSize() const { return getTensorElementSize(this->type); }
 
-TensorRTExecutionProvider::TensorRTExecutionProvider(donut::app::DeviceManager *deviceManager)
-    : CommonDeviceObject(deviceManager) {}
+size_t TensorDescriptor::elementCount() const { return std::accumulate(shape.begin(), shape.end(), 1ULL, std::multiplies<size_t>()); }
+
+size_t TensorDescriptor::byteSize() const { return elementCount() * elementSize(); }
+
+TensorRTExecutionProvider::TensorRTExecutionProvider(nvrhi::IDevice *device)
+    : CommonDeviceObject(device) {}
 
 std::shared_ptr<SharedTensor> TensorRTExecutionProvider::getTensor(const std::string &name) {
+	if (m_tensors.find(name) == m_tensors.end()) {
+		Log(Error, "[TensorRT Runner] Tensor not found: %s", name.c_str());
+		return nullptr;
+	}
 	return m_tensors[name];
 }
 
-nvrhi::BufferHandle TensorRTExecutionProvider::getTensorBuffer(const std::string &name) {
-	return m_tensors[name]->buffer;
+nvrhi::IBuffer* TensorRTExecutionProvider::getTensorBuffer(const std::string &name) {
+	return getTensor(name)->buffer.Get();
 }
 
 std::shared_ptr<SharedTensor> TensorRTExecutionProvider::createSharedTensor(
@@ -69,12 +78,15 @@ std::shared_ptr<SharedTensor> TensorRTExecutionProvider::createSharedTensor(
 	for (size_t dim : descriptor.shape) {
 		elementCount *= dim;
 	}
-	bufferDesc.byteSize = static_cast<size_t>(elementCount * descriptor.elementSize());
-	bufferDesc.debugName = descriptor.name;
-	bufferDesc.canHaveUAVs = true;
-	bufferDesc.canHaveRawViews = true;
-	bufferDesc.initialState = nvrhi::ResourceStates::UnorderedAccess;
-	bufferDesc.keepInitialState = false;
+	bufferDesc.format			 = nvrhi::Format::UNKNOWN;
+	bufferDesc.structStride		 = static_cast<uint32_t>(descriptor.elementSize());
+	bufferDesc.byteSize			 = static_cast<size_t>(elementCount * descriptor.elementSize());
+	bufferDesc.debugName		 = descriptor.name;
+	bufferDesc.canHaveUAVs		 = true;
+	bufferDesc.canHaveRawViews	 = false;
+	bufferDesc.canHaveTypedViews = false;
+	bufferDesc.initialState		 = nvrhi::ResourceStates::UnorderedAccess;
+	bufferDesc.keepInitialState	 = true;
 	// Setup shared resource flags for CUDA external memory export.
     bufferDesc.sharedResourceFlags = nvrhi::SharedResourceFlags::Shared;
 
@@ -147,10 +159,50 @@ bool TensorRTExecutionProvider::load(std::filesystem::path onnxPath) {
                 return false;
         }
 
-	if (!parser->parseFromFile(onnxPath.string().c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kVERBOSE))) {
+	// TensorRT resolves external ONNX data relative to the process CWD.
+	// Ensure the CWD is the ONNX folder during parsing, and normalize path
+	// separators so TensorRT can locate the `.onnx.data` file on Windows.
+	const std::filesystem::path onnxAbsolutePath = std::filesystem::absolute(onnxPath);
+	const std::filesystem::path onnxDir = onnxAbsolutePath.parent_path();
+
+	struct CurrentPathGuard {
+		std::filesystem::path previous;
+		explicit CurrentPathGuard(const std::filesystem::path &next) : previous(std::filesystem::current_path()) {
+			std::filesystem::current_path(next);
+		}
+		~CurrentPathGuard() {
+			std::error_code ec;
+			std::filesystem::current_path(previous, ec);
+		}
+	} cwdGuard(onnxDir);
+
+	const std::string onnxPathStr = onnxAbsolutePath.generic_string(); // use forward slashes
+	if (!parser->parseFromFile(onnxPathStr.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kVERBOSE))) {
 		logError("[TensorRT Runner] Failed to parse ONNX file!");
 		return false;
-        }
+	}
+
+	auto optimizationProfile = builder->createOptimizationProfile();
+	// Handle dynamic shapes
+	for (int i = 0; i < network->getNbInputs(); i++) {
+		auto input = network->getInput(i);
+		std::string inputName = input->getName();
+		auto inputShape = input->getDimensions();
+
+		if (inputShape.d[0] == -1) {
+			nvinfer1::Dims targetShape = inputShape;
+			targetShape.d[0]		   = 1;
+			if (inputShape.nbDims == 4) {
+				targetShape.d[1] = 3;
+				targetShape.d[2] = 1152;
+				targetShape.d[3] = 2048;
+			}
+			optimizationProfile->setDimensions(inputName.c_str(), nvinfer1::OptProfileSelector::kMIN, targetShape);
+			optimizationProfile->setDimensions(inputName.c_str(), nvinfer1::OptProfileSelector::kOPT, targetShape);
+			optimizationProfile->setDimensions(inputName.c_str(), nvinfer1::OptProfileSelector::kMAX, targetShape);
+		}
+	}
+	builderConfig->addOptimizationProfile(optimizationProfile);
 
     auto serializedEngine = std::unique_ptr<nvinfer1::IHostMemory>(builder->buildSerializedNetwork(*network, *builderConfig));
 
