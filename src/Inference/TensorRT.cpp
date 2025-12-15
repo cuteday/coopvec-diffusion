@@ -74,13 +74,9 @@ std::shared_ptr<SharedTensor> TensorRTExecutionProvider::createSharedTensor(
 	sharedTensor->descriptor = descriptor;
 
     nvrhi::BufferDesc bufferDesc = {};
-	size_t elementCount = 1;
-	for (size_t dim : descriptor.shape) {
-		elementCount *= dim;
-	}
 	bufferDesc.format			 = nvrhi::Format::UNKNOWN;
 	bufferDesc.structStride		 = static_cast<uint32_t>(descriptor.elementSize());
-	bufferDesc.byteSize			 = static_cast<size_t>(elementCount * descriptor.elementSize());
+	bufferDesc.byteSize			 = static_cast<size_t>(descriptor.elementCount() * descriptor.elementSize());
 	bufferDesc.debugName		 = descriptor.name;
 	bufferDesc.canHaveUAVs		 = true;
 	bufferDesc.canHaveRawViews	 = false;

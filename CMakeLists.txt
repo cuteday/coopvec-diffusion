@@ -50,6 +50,7 @@ set(SHADERMAKE_DXC_DATE "2025_05_24" CACHE STRING "")
 option(SHADERMAKE_FIND_SLANG "" ON)
 set(SHADERMAKE_SLANG_VERSION "2025.10" CACHE STRING "")
 
+
 set(DONUT_SHADERS_OUTPUT_DIR "${FLUXEL_BINARY_DIR}/shaders/framework")
 
 if (WIN32)
@@ -57,6 +58,8 @@ if (WIN32)
 	set(DONUT_WITH_DX12 ON)
 	set(NVRHI_WITH_DX12 ON)
 endif()
+
+include(${FLUXEL_PROJECT_DIR}/external/donut/compileshaders.cmake)
 
 if (DONUT_WITH_DX12)
 	# Get D3D Agility SDK Preview for Coop Vector support
@@ -75,11 +78,14 @@ if (FLUXEL_WITH_CUDA)
 	link_directories(${TRT_RTX_LIBRARY_DIR} ${CUDA_LIBRARY_DIRS})
 endif()
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(FLUXEL_MAIN_SHADER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Include/Shaders CACHE PATH "" FORCE)
 
 add_subdirectory(external/donut)
 add_subdirectory(src)
+add_subdirectory(apps)
+add_subdirectory(plugins)
 if (FLUXEL_BUILD_SAMPLES)
     add_subdirectory(samples)
 endif()

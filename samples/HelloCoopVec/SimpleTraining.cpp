@@ -665,7 +665,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 int main(int __argc, const char** __argv)
 #endif
 {
-    nvrhi::GraphicsAPI graphicsApi = app::GetGraphicsAPIFromCommandLine(__argc, __argv);
+    // nvrhi::GraphicsAPI graphicsApi = app::GetGraphicsAPIFromCommandLine(__argc, __argv);
+	nvrhi::GraphicsAPI graphicsApi = nvrhi::GraphicsAPI::VULKAN;
     if (graphicsApi == nvrhi::GraphicsAPI::D3D11)
     {
         log::error("This sample does not support D3D11.");

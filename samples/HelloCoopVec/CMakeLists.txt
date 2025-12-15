@@ -1,7 +1,6 @@
-include(../../external/donut/compileshaders.cmake)
-
 set(shader_includes
 	${FLUXEL_COOPVEC_SHADER_INCLUDE_DIR}
+	${FLUXEL_MAIN_SHADER_INCLUDE_DIR}
 	${CMAKE_CURRENT_LIST_DIR}
 )
 
