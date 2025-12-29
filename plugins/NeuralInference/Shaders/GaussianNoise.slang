@@ -5,7 +5,7 @@
 
 DECLARE_CBUFFER(ImageTransformConstants, gConstants, 0, 0);
 
-RWStructuredBuffer<half> outputTensor : REGISTER_UAV(0, 0);
+RWStructuredBuffer<TensorType> outputTensor : REGISTER_UAV(0, 0);
 
 float2 sampleNormal(inout PCG32 pcg, float mean, float sigma)
 {
@@ -35,7 +35,7 @@ void GaussianNoise_cs(uint3 pixelIndex : SV_DispatchThreadID)
 	float3 noise;
 	noise.xy = sampleNormal(pcg, 0.0f, 1.0f);
 	noise.z = sampleNormal(pcg, 0.0f, 1.0f).x;
-	outputTensor[globalIndex * 3 + 0] = half(noise.x);
-	outputTensor[globalIndex * 3 + 1] = half(noise.y);
-	outputTensor[globalIndex * 3 + 2] = half(noise.z);
+	outputTensor[globalIndex * 3 + 0] = TensorType(noise.x);
+	outputTensor[globalIndex * 3 + 1] = TensorType(noise.y);
+	outputTensor[globalIndex * 3 + 2] = TensorType(noise.z);
 }

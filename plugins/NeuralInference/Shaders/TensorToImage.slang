@@ -4,7 +4,7 @@
 
 DECLARE_CBUFFER(ImageTransformConstants, gConstants, 0, 0);
 
-StructuredBuffer<half> inputTensor : REGISTER_SRV(0, 0);
+StructuredBuffer<TensorType> inputTensor : REGISTER_SRV(0, 0);
 RWTexture2D<float4> outputImage : REGISTER_UAV(0, 0);
 
 [shader("compute")]
@@ -19,7 +19,7 @@ void TensorToImage_cs(uint3 pixelIndex : SV_DispatchThreadID)
 	uint numPixels = gConstants.tensorShape.x * gConstants.tensorShape.y;
 
 	// Assuming the tensor output has 3 channels (RGB) in [0, 255] range
-	float4 pixel = float4(inputTensor[linearIndex], inputTensor[linearIndex + numPixels], inputTensor[linearIndex + 2 * numPixels], 255.0f);
+	float4 pixel = float4(inputTensor[linearIndex], inputTensor[linearIndex + numPixels], inputTensor[linearIndex + 2 * numPixels], gConstants.scaleFactor);
 
-	outputImage[pixelIndex.xy] = pixel / 255.0f;
+	outputImage[pixelIndex.xy] = pixel / gConstants.scaleFactor;
 }

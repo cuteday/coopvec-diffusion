@@ -12,13 +12,13 @@
 
 #include <donut/app/ApplicationBase.h>
 
-#include <Inference/NeuralInferencePass.h>
-#include <Inference/TensorRT.h>
+#include "plugins/NeuralInference/NeuralInferencePass.h"
+#include "plugins/NeuralInference/TensorRT.h"
 #include <Render/RenderPass.h>
 #include <Utils/DeviceUtils.h>
 #include <Utils/FileSystem.h>
 #include <Logger.h>
-#include "plugins/BasicRenderer/Renderer.h"
+#include "Renderer.h"
 
 using namespace fluxel;
 
@@ -69,19 +69,20 @@ int main(int argc, char **argv) {
 
 	{
 		auto uiRenderer = std::make_shared<ModelRunnerUI>(deviceManager.get());
-		auto neuralInferencePass = std::make_shared<NeuralInferencePass>(deviceManager.get());
-		auto basicRenderer = std::make_shared<BasicRenderer>(deviceManager.get(), "");
+		// auto neuralInferencePass = std::make_shared<NeuralInferencePass>(deviceManager.get());
+		auto basicRenderer = std::make_shared<ModelRunnerRenderer>(deviceManager.get(), "");
 
 		uiRenderer->AddRenderPass(basicRenderer);
-		uiRenderer->AddRenderPass(neuralInferencePass);
+		// uiRenderer->AddRenderPass(neuralInferencePass);
 
 		deviceManager->AddRenderPassToBack(basicRenderer.get());
-		deviceManager->AddRenderPassToBack(neuralInferencePass.get());
+		// deviceManager->AddRenderPassToBack(neuralInferencePass.get());
 		deviceManager->AddRenderPassToBack(uiRenderer.get());
 
 		deviceManager->RunMessageLoop();
 
-		deviceManager->RemoveRenderPass(neuralInferencePass.get());
+		deviceManager->RemoveRenderPass(basicRenderer.get());
+		// deviceManager->RemoveRenderPass(neuralInferencePass.get());
 		deviceManager->RemoveRenderPass(uiRenderer.get());
 	}
 

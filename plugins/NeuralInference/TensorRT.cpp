@@ -7,7 +7,7 @@
 #include "NvInferRuntime.h"
 #include "NvOnnxParser.h"
 
-#include "Inference/TensorRT.h"
+#include "TensorRT.h"
 #include "Logger.h"
 #include "nvrhi/common/resource.h"
 
@@ -57,7 +57,7 @@ TensorRTExecutionProvider::TensorRTExecutionProvider(nvrhi::IDevice *device)
 
 std::shared_ptr<SharedTensor> TensorRTExecutionProvider::getTensor(const std::string &name) {
 	if (m_tensors.find(name) == m_tensors.end()) {
-		Log(Error, "[TensorRT Runner] Tensor not found: %s", name.c_str());
+		Log(Warning, "[TensorRT Runner] Tensor not found: %s", name.c_str());
 		return nullptr;
 	}
 	return m_tensors[name];
@@ -121,88 +121,115 @@ std::shared_ptr<SharedTensor> TensorRTExecutionProvider::createSharedTensor(
 
 bool TensorRTExecutionProvider::load(std::filesystem::path onnxPath) {
 
+	// Destroy any existing engine and execution context created by the previous load call.
+	// The execution context should be destroyed before any engine objects that it created.
+	m_executionContext.reset();
+	m_engine.reset();
+	m_runtime.reset();
+
 	if (!(onnxPath.extension() == ".onnx")) {
 		logError("[TensorRT Runner] Invalid ONNX file: " + onnxPath.string());
 		return false;
         }
 
-    TRTLogger logger;
+	TRTLogger logger;
+	std::string enginePath = onnxPath.string() + ".engine";
 
-	auto builder = std::unique_ptr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(logger));
-	if (!builder) {
-		logError("[TensorRT Runner] Failed to create builder!");
-		return false;
-	}
+	if (!std::filesystem::exists(enginePath)) {
+		Log(Info, "TensorRT Runner] Building the serialized engine using ONNX file: %s",
+			onnxPath.c_str());
 
-	auto builderConfig = std::unique_ptr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
-	if (!builderConfig) {
-		logError("[TensorRT Runner] Failed to create builder config!");
-		return false;
-	}
-
-	// TRT-RTX only supports strongly typed networks, explicitly specify this to avoid warning.
-	nvinfer1::NetworkDefinitionCreationFlags flags = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kSTRONGLY_TYPED);
-
-	auto network = std::unique_ptr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(flags));
-	if (!network) {
-		logError("[TensorRT Runner] Failed to create network!");
-		return false;
-	}
-
-	auto parser = nvonnxparser::createParser(*network, logger);
-	if (!parser) {
-		logError("[TensorRT Runner] Failed to create parser!");
-                return false;
-        }
-
-	// TensorRT resolves external ONNX data relative to the process CWD.
-	// Ensure the CWD is the ONNX folder during parsing, and normalize path
-	// separators so TensorRT can locate the `.onnx.data` file on Windows.
-	const std::filesystem::path onnxAbsolutePath = std::filesystem::absolute(onnxPath);
-	const std::filesystem::path onnxDir = onnxAbsolutePath.parent_path();
-
-	struct CurrentPathGuard {
-		std::filesystem::path previous;
-		explicit CurrentPathGuard(const std::filesystem::path &next) : previous(std::filesystem::current_path()) {
-			std::filesystem::current_path(next);
+		auto builder = std::unique_ptr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(logger));
+		if (!builder) {
+			logError("[TensorRT Runner] Failed to create builder!");
+			return false;
 		}
-		~CurrentPathGuard() {
-			std::error_code ec;
-			std::filesystem::current_path(previous, ec);
+
+		auto builderConfig = std::unique_ptr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
+		if (!builderConfig) {
+			logError("[TensorRT Runner] Failed to create builder config!");
+			return false;
 		}
-	} cwdGuard(onnxDir);
 
-	const std::string onnxPathStr = onnxAbsolutePath.generic_string(); // use forward slashes
-	if (!parser->parseFromFile(onnxPathStr.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kVERBOSE))) {
-		logError("[TensorRT Runner] Failed to parse ONNX file!");
-		return false;
-	}
+		// TRT-RTX only supports strongly typed networks, explicitly specify this to avoid warning.
+		nvinfer1::NetworkDefinitionCreationFlags flags = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kSTRONGLY_TYPED);
 
-	auto optimizationProfile = builder->createOptimizationProfile();
-	// Handle dynamic shapes
-	for (int i = 0; i < network->getNbInputs(); i++) {
-		auto input = network->getInput(i);
-		std::string inputName = input->getName();
-		auto inputShape = input->getDimensions();
+		auto network = std::unique_ptr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(flags));
+		if (!network) {
+			logError("[TensorRT Runner] Failed to create network!");
+			return false;
+		}
 
-		if (inputShape.d[0] == -1) {
-			nvinfer1::Dims targetShape = inputShape;
-			targetShape.d[0]		   = 1;
-			if (inputShape.nbDims == 4) {
-				targetShape.d[1] = 3;
-				targetShape.d[2] = 1152;
-				targetShape.d[3] = 2048;
+		auto parser = nvonnxparser::createParser(*network, logger);
+		if (!parser) {
+			logError("[TensorRT Runner] Failed to create parser!");
+					return false;
 			}
-			optimizationProfile->setDimensions(inputName.c_str(), nvinfer1::OptProfileSelector::kMIN, targetShape);
-			optimizationProfile->setDimensions(inputName.c_str(), nvinfer1::OptProfileSelector::kOPT, targetShape);
-			optimizationProfile->setDimensions(inputName.c_str(), nvinfer1::OptProfileSelector::kMAX, targetShape);
+
+		// TensorRT resolves external ONNX data relative to the process CWD.
+		// Ensure the CWD is the ONNX folder during parsing, and normalize path
+		// separators so TensorRT can locate the `.onnx.data` file on Windows.
+		const std::filesystem::path onnxAbsolutePath = std::filesystem::absolute(onnxPath);
+		const std::filesystem::path onnxDir = onnxAbsolutePath.parent_path();
+
+		struct CurrentPathGuard {
+			std::filesystem::path previous;
+			explicit CurrentPathGuard(const std::filesystem::path &next) : previous(std::filesystem::current_path()) {
+				std::filesystem::current_path(next);
+			}
+			~CurrentPathGuard() {
+				std::error_code ec;
+				std::filesystem::current_path(previous, ec);
+			}
+		} cwdGuard(onnxDir);
+
+		const std::string onnxPathStr = onnxAbsolutePath.generic_string(); // use forward slashes
+		if (!parser->parseFromFile(onnxPathStr.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kVERBOSE))) {
+			logError("[TensorRT Runner] Failed to parse ONNX file!");
+			return false;
 		}
+
+		auto optimizationProfile = builder->createOptimizationProfile();
+		// Handle dynamic shapes
+		for (int i = 0; i < network->getNbInputs(); i++) {
+			auto input = network->getInput(i);
+			std::string inputName = input->getName();
+			auto inputShape = input->getDimensions();
+
+			if (inputShape.d[0] == -1) {
+				nvinfer1::Dims targetShape = inputShape;
+				targetShape.d[0]		   = 1;
+				if (inputShape.nbDims == 4) {
+					targetShape.d[1] = 3;
+					targetShape.d[2] = 1152;
+					targetShape.d[3] = 2048;
+				}
+				optimizationProfile->setDimensions(inputName.c_str(), nvinfer1::OptProfileSelector::kMIN, targetShape);
+				optimizationProfile->setDimensions(inputName.c_str(), nvinfer1::OptProfileSelector::kOPT, targetShape);
+				optimizationProfile->setDimensions(inputName.c_str(), nvinfer1::OptProfileSelector::kMAX, targetShape);
+			}
+		}
+		builderConfig->addOptimizationProfile(optimizationProfile);
+
+		auto serializedEngine = std::unique_ptr<nvinfer1::IHostMemory>(builder->buildSerializedNetwork(*network, *builderConfig));
+
+		Log(Success, "[TensorRT Runner] Successfully built the serialized engine. Engine size: %lu bytes.",
+			serializedEngine->size());
+
+		Log(Success, "[TensorRT Runner] Caching serialized engine to file: %s", enginePath.c_str());
+		std::ofstream engineFile(enginePath, std::ios::binary);
+		engineFile.write(reinterpret_cast<const char*>(serializedEngine->data()), serializedEngine->size());
+		engineFile.close();
+
+	} else {
+		Log(Success, "[TensorRT Runner] Engine file already exists. Loading from file: %s",
+			enginePath.c_str());
 	}
-	builderConfig->addOptimizationProfile(optimizationProfile);
 
-    auto serializedEngine = std::unique_ptr<nvinfer1::IHostMemory>(builder->buildSerializedNetwork(*network, *builderConfig));
-
-    logInfo("[TensorRT Runner] Successfully built the serialized engine. Engine size: " + std::to_string(serializedEngine->size()) + " bytes.");
+	// Load the serialized engine from file and deserialize it.
+	std::ifstream engineFile(enginePath, std::ios::binary);
+	std::vector<char> serializedEngine(std::istreambuf_iterator<char>(engineFile), {});
+	engineFile.close();
 
     m_runtime = std::unique_ptr<nvinfer1::IRuntime>(nvinfer1::createInferRuntime(logger));
     if (!m_runtime) {
@@ -211,7 +238,7 @@ bool TensorRTExecutionProvider::load(std::filesystem::path onnxPath) {
     }
 
     // Deserialize the engine.
-	m_engine = std::unique_ptr<nvinfer1::ICudaEngine>(m_runtime->deserializeCudaEngine(serializedEngine->data(), serializedEngine->size()));
+	m_engine = std::unique_ptr<nvinfer1::ICudaEngine>(m_runtime->deserializeCudaEngine(serializedEngine.data(), serializedEngine.size()));
     if (!m_engine) {
     	logError("[TensorRT Runner] Failed to create inference engine!");
         return false;

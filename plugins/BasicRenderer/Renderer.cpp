@@ -152,8 +152,14 @@ BasicRenderer::BasicRenderer(donut::app::DeviceManager* deviceManager, const std
 
     m_NativeFs = std::make_shared<donut::vfs::NativeFileSystem>();
 
-    m_SceneDir = mediaDir / "scenes";
-    m_SceneFilesAvailable = donut::app::FindScenes(*m_NativeFs, m_SceneDir);
+    m_SceneDir = mediaDir / "media";
+	auto allScenesAvailable = donut::app::FindScenes(*m_NativeFs, m_SceneDir);
+	// Find the scenes that ends with ".scene.json"
+	for (const auto& scene : allScenesAvailable) {
+		if (scene.ends_with(".scene.json")) {
+			m_SceneFilesAvailable.push_back(scene);
+		}
+	}
 
     if (sceneName.empty() && m_SceneFilesAvailable.empty())
     {

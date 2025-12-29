@@ -28,10 +28,10 @@
 #include <random>
 
 #include "Utils/DeviceUtils.h"
-#include "Neural/CooperativeVectors.h"
-#include "Neural/Network.h"
+#include "plugins/CooperativeVectors/CooperativeVectors.h"
+#include "plugins/CooperativeVectors/Network.h"
+#include "plugins/CooperativeVectors/LearningRateScheduler.h"
 #include "Utils/FileSystem.h"
-#include "Utils/LearningRateScheduler.h"
 
 using namespace donut;
 using namespace donut::math;
@@ -65,7 +65,7 @@ public:
     bool Init()
     {
         std::filesystem::path frameworkShaderPath = app::GetDirectoryWithExecutable() / "shaders/framework" / app::GetShaderTypeName(GetDevice()->getGraphicsAPI());
-        std::filesystem::path appShaderPath = app::GetDirectoryWithExecutable() / "shaders/SimpleTraining" / app::GetShaderTypeName(GetDevice()->getGraphicsAPI());
+        std::filesystem::path appShaderPath = app::GetDirectoryWithExecutable() / "shaders/HelloCoopVec" / app::GetShaderTypeName(GetDevice()->getGraphicsAPI());
 
         m_RootFS = std::make_shared<vfs::RootFileSystem>();
         m_RootFS->mount("/shaders/donut", frameworkShaderPath);

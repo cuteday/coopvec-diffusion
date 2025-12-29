@@ -5,7 +5,7 @@ file(GLOB_RECURSE ${project}_src "*.cpp" "*.h")
 
 add_executable(${project} ${${project}_src})
 
-target_link_libraries(${project} FluxelLib donut_app donut_engine ${TRT_RTX_LIB_NAME} ${TRT_RTX_ONNXPARSER_LIB_NAME} ${CUDA_LIBRARIES} CUDA::cudart)
+target_link_libraries(${project} FluxelLib NeuralInference donut_app donut_engine ${TRT_RTX_LIB_NAME} ${TRT_RTX_ONNXPARSER_LIB_NAME} ${CUDA_LIBRARIES} CUDA::cudart)
 set_target_properties(${project} PROPERTIES FOLDER ${folder})
 
 if (MSVC)

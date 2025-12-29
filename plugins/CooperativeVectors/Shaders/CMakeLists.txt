@@ -1,5 +1,5 @@
-set(project FluxelShaders)
-set(folder "${LIBRARY_FILTER}/Shaders")
+set(project CooperativeVectorsShaders)
+set(folder "plugins/CooperativeVectors/Shaders")
 
 file(GLOB shaders "*.slang")
 

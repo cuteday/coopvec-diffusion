@@ -1,1 +1,5 @@
 add_subdirectory(BasicRenderer)
+add_subdirectory(CooperativeVectors)
+if (FLUXEL_WITH_CUDA)
+    add_subdirectory(NeuralInference)
+endif()

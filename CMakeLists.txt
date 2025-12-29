@@ -8,7 +8,9 @@ project(
 
 option(FLUXEL_WITH_CUDA "Enable CUDA support" ON)
 
-option(FLUXEL_BUILD_SAMPLES "Build samples" ON)
+option(FLUXEL_BUILD_SAMPLES "Build samples" OFF)
+
+option(FLUXEL_FETCH_ASSETS "Fetch sample scenes (currently fetched from the RTXGI2 sdk assets)" ON)
 
 set(FLUXEL_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "The root directory of the Fluxel project.")
 

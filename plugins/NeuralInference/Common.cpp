@@ -1,4 +1,4 @@
-#include "Inference/Common.h"
+#include "Common.h"
 #include <cuda.h>
 
 NAMESPACE_BEGIN(fluxel)

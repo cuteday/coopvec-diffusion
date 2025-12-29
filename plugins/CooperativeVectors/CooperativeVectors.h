@@ -3,6 +3,12 @@
 #include "Fluxel.h"
 #include <nvrhi/nvrhi.h>
 
+namespace donut::app
+{
+struct DeviceCreationParameters;
+class DeviceManager;
+} // namespace donut::app
+
 NAMESPACE_BEGIN(fluxel)
 
 struct CoopVectorFeatures
@@ -26,5 +32,10 @@ public:
 private:
     CoopVectorFeatures m_coopVectorFeatures;
 };
+
+void SetCoopVectorExtensionParameters(donut::app::DeviceCreationParameters& deviceParams, nvrhi::GraphicsAPI graphicsApi, bool enableSharedMemory, char const* windowTitle);
+
+// Call after device creation to verify the extension has been enabled
+bool CoopVectorExtensionSupported(donut::app::DeviceManager *deviceManager);
 
 NAMESPACE_END(fluxel)

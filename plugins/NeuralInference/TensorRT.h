@@ -17,7 +17,7 @@
 
 #include "Fluxel.h"
 #include "Object.h"
-#include "Inference/Common.h"
+#include "Common.h"
 
 NAMESPACE_BEGIN(fluxel)
 

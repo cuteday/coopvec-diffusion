@@ -20,6 +20,8 @@ CMakeSettings.json
 # Local files
 /assets/local
 /assets/scenes
+/assets/media
+/assets/models
 
 # Runtime temporary files
 imgui.ini

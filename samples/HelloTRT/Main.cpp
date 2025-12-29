@@ -12,7 +12,7 @@
 
 #include <donut/app/ApplicationBase.h>
 
-#include <Inference/TensorRT.h>
+#include "plugins/NeuralInference/TensorRT.h"
 #include <Utils/DeviceUtils.h>
 #include <Utils/FileSystem.h>
 #include <Logger.h>

@@ -1,11 +1,13 @@
 set(project ModelRunner)
 set(folder "apps/ModelRunner")
 
-file(GLOB_RECURSE ${project}_src "*.cpp" "*.h")
+file(GLOB_RECURSE ${project}_src
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 add_executable(${project} ${${project}_src})
 
-target_link_libraries(${project} FluxelLib BasicRenderer donut_app donut_render donut_engine ${TRT_RTX_LIB_NAME} ${TRT_RTX_ONNXPARSER_LIB_NAME} ${CUDA_LIBRARIES} CUDA::cudart CUDA::cuda_driver)
+target_link_libraries(${project} FluxelLib BasicRenderer NeuralInference donut_app donut_render donut_engine ${TRT_RTX_LIB_NAME} ${TRT_RTX_ONNXPARSER_LIB_NAME} ${CUDA_LIBRARIES} CUDA::cudart CUDA::cuda_driver)
 set_target_properties(${project} PROPERTIES FOLDER ${folder})
 
 if (MSVC)
